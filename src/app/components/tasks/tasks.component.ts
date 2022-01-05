@@ -9,26 +9,26 @@ import { Task } from '../../Task';
 })
 export class TasksComponent implements OnInit {
   tasks: Task[] = [];
+  public pbTasks: Task[] = this.tasks;
   constructor(private taskService: TaskService) {}
 
   ngOnInit(): void {
-    this.taskService.getTasks().subscribe((tasks) => (this.tasks = tasks));
+    this.taskService.getTasksFromDB().subscribe((tasks) => {
+      this.taskService.setTasks(tasks);
+      this.tasks = this.taskService.getTasks();
+    });
   }
 
-  deleteTask(task: Task) {
-    this.taskService
-      .deleteTask(task)
-      .subscribe(
-        () => (this.tasks = this.tasks.filter((t) => t.id !== task.id))
-      );
+  deleteTask(index: number) {
+    this.taskService.deleteTask(index).subscribe();
   }
 
-  toggleReminder(task: Task) {
-    task.reminder = !task.reminder;
-    this.taskService.updateTaskReminder(task).subscribe();
+  toggleReminder(i: number) {
+    this.taskService.updateTaskReminder(i).subscribe();
   }
 
   addTask(task: Task) {
-    this.taskService.addTask(task).subscribe((task) => this.tasks.push(task));
+    this.taskService.addTaskToArr(task);
+    this.taskService.addTaskToDb();
   }
 }

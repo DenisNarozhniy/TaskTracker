@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnInit } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { Task } from '../Task';
 
 const httpOptions = {
@@ -11,25 +11,48 @@ const httpOptions = {
 @Injectable({
   providedIn: 'root',
 })
-export class TaskService {
-  private apiUrl = 'http://localhost:5000/tasks';
+export class TaskService implements OnInit {
+  private apiUrl =
+    'https://takstracker-default-rtdb.europe-west1.firebasedatabase.app/tasks.json';
+  tasksChange = new Subject<Task[]>();
+  private tasks: Task[] = [];
+
   constructor(private http: HttpClient) {}
 
-  getTasks(): Observable<Task[]> {
+  getTasksFromDB() {
     return this.http.get<Task[]>(this.apiUrl);
   }
 
-  deleteTask(task: Task): Observable<Task> {
-    const url = `${this.apiUrl}/${task.id}`;
-    return this.http.delete<Task>(url);
+  ngOnInit() {
+    this.tasksChange.next(this.tasks.slice());
   }
 
-  updateTaskReminder(task: Task): Observable<Task> {
-    const url = `${this.apiUrl}/${task.id}`;
-    return this.http.put<Task>(url, task, httpOptions);
+  deleteTask(index: number) {
+    this.tasks.splice(index, 1);
+    return this.http.put(this.apiUrl, this.tasks);
   }
 
-  addTask(task: Task): Observable<Task> {
-    return this.http.post<Task>(this.apiUrl, task, httpOptions);
+  updateTaskReminder(i: number) {
+    this.tasks[i].reminder = !this.tasks[i].reminder;
+    return this.http.put<Task>(this.apiUrl, this.tasks);
+  }
+
+  addTaskToDb() {
+    let taskArr = this.tasks.slice();
+    this.http.put(this.apiUrl, taskArr).subscribe();
+    this.tasksChange.next(this.tasks.slice());
+  }
+
+  addTaskToArr(task: Task) {
+    this.tasks.push(task);
+  }
+
+  setTasks(tasks: Task[]) {
+    this.tasks = tasks;
+    this.tasksChange.next(this.tasks.slice());
+  }
+
+  getTasks() {
+    return this.tasks;
   }
 }
